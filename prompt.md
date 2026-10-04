@@ -85,3 +85,24 @@ APPS.md에 포함된 내용:
 - ffmpeg PATH 문제 및 접근성 권한 해결 방법 (상세)
 - 문제 해결 가이드
 - 사용법 및 팁
+
+## 2026-10-04: 메뉴바 톱니바퀴가 계속 남는 문제 해결
+
+### 문제 발생
+- myspeak.app 실행 후 메뉴바에 톱니바퀴가 계속 돌고 "0% 완료됨 (AppleScript 실행)"으로 남음
+- 음성 인식은 정상 동작
+
+### 원인
+- `> /dev/null 2>&1`이 마지막 명령(python)에만 적용됨
+- `&`로 백그라운드에 간 바깥 셸이 `do shell script`의 출력 파이프를 계속 쥐고 있어 AppleScript가 끝나지 않음
+- `lsof`로 셸의 stdout/stderr가 Automator 프로세스의 파이프에 연결된 것을 확인
+
+### 해결
+명령 전체를 괄호로 묶음. 위 2025-02-12 기록의 AppleScript는 당시 내용이며, 현재 버전은 아래와 같음.
+
+```applescript
+on run {input, parameters}
+  do shell script "(export PATH=/opt/homebrew/bin:$PATH && cd /Users/hanju/02hobby/mlx-whisper && /Users/hanju/02hobby/mlx-whisper/venv/bin/python app.py) > /dev/null 2>&1 &"
+  return input
+end run
+```

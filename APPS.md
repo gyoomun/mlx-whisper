@@ -39,7 +39,7 @@ open -a Automator
 
 ```applescript
 on run {input, parameters}
-  do shell script "export PATH=/opt/homebrew/bin:$PATH && cd /Users/hanju/02hobby/mlx-whisper && /Users/hanju/02hobby/mlx-whisper/venv/bin/python app.py > /dev/null 2>&1 &"
+  do shell script "(export PATH=/opt/homebrew/bin:$PATH && cd /Users/hanju/02hobby/mlx-whisper && /Users/hanju/02hobby/mlx-whisper/venv/bin/python app.py) > /dev/null 2>&1 &"
   return input
 end run
 ```
@@ -234,6 +234,17 @@ chmod +x ~/Library/Application\ Support/Raycast/Scripts/myspeak-toggle.sh
    - `ImportError`: 의존성 재설치 필요
    - `PermissionError`: 마이크 권한 확인
 
+### 메뉴바에 톱니바퀴(⚙️)가 계속 돌고 있음
+
+**증상**: myspeak.app 실행 후 메뉴바에 톱니바퀴가 계속 돌고, 누르면 "myspeak.app 0% 완료됨 (AppleScript 실행)"으로 표시됨. 음성 인식 자체는 정상 동작.
+
+**원인**: `do shell script`는 셸의 출력 파이프가 닫힐 때까지 기다린다. `A && B && python app.py > /dev/null 2>&1 &`처럼 쓰면 리다이렉트가 마지막 명령(python)에만 적용되고, `&`로 백그라운드에 간 바깥 셸은 파이프를 계속 쥐고 있어서 Automator가 끝나지 않는다.
+
+**해결**: 명령 전체를 괄호로 묶어 리다이렉트가 전체에 적용되게 한다.
+```applescript
+do shell script "(export PATH=... && cd ... && .../python app.py) > /dev/null 2>&1 &"
+```
+
 ### ImportError: Failed to load metallib
 
 **원인**: MLX 라이브러리 손상 (캐시 삭제 등)
@@ -314,7 +325,7 @@ pip install mlx mlx-whisper numba llvmlite
    완전한 코드:
    ```applescript
    on run {input, parameters}
-     do shell script "export PATH=/opt/homebrew/bin:$PATH && cd /Users/hanju/02hobby/mlx-whisper && /Users/hanju/02hobby/mlx-whisper/venv/bin/python app.py > /dev/null 2>&1 &"
+     do shell script "(export PATH=/opt/homebrew/bin:$PATH && cd /Users/hanju/02hobby/mlx-whisper && /Users/hanju/02hobby/mlx-whisper/venv/bin/python app.py) > /dev/null 2>&1 &"
      return input
    end run
    ```
@@ -324,7 +335,7 @@ pip install mlx mlx-whisper numba llvmlite
 **디버깅 방법**:
 오류를 확인하려면 AppleScript의 출력을 로그 파일로 변경:
 ```applescript
-... app.py > /tmp/myspeak.log 2>&1 &
+... app.py) > /tmp/myspeak.log 2>&1 &
 ```
 그런 다음:
 ```bash
